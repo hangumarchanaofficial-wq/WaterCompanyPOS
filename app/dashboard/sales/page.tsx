@@ -18,14 +18,18 @@ import {
     Search,
     Filter,
     Eye,
-    Download,
     TrendingUp,
     CreditCard,
     Banknote,
     X,
     User,
     Package,
-    Hash
+    Hash,
+    Plus,
+    ShoppingCart,
+    ChevronLeft,
+    ChevronRight,
+    ArrowUpRight
 } from "lucide-react";
 import Link from "next/link";
 import { useSales } from "@/hooks/useSales";
@@ -37,6 +41,8 @@ export default function SalesPage() {
     const [paymentFilter, setPaymentFilter] = useState("all");
     const [dateFilter, setDateFilter] = useState("all");
     const [selectedSale, setSelectedSale] = useState<any>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage] = useState(10);
 
     // Filter sales based on search and filters
     const filteredSales = useMemo(() => {
@@ -85,6 +91,25 @@ export default function SalesPage() {
         return filtered;
     }, [sales, searchQuery, paymentFilter, dateFilter]);
 
+    // Pagination
+    const totalPages = Math.ceil(filteredSales.length / rowsPerPage);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const paginatedSales = filteredSales.slice(startIndex, endIndex);
+
+    const handlePrevPage = () => {
+        setCurrentPage((prev) => Math.max(prev - 1, 1));
+    };
+
+    const handleNextPage = () => {
+        setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+    };
+
+    // Reset to page 1 when filters change
+    useMemo(() => {
+        setCurrentPage(1);
+    }, [searchQuery, paymentFilter, dateFilter]);
+
     // Calculate summary statistics
     const summary = useMemo(() => {
         const total = filteredSales.reduce((sum, sale) => sum + sale.total_amount, 0);
@@ -123,123 +148,131 @@ export default function SalesPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-6">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                            Sales History
-                        </h1>
-                        <p className="text-muted-foreground mt-1">
-                            View and manage all sales transactions
-                        </p>
+        <div className="min-h-screen bg-[#101922] flex flex-col">
+            <div className="flex-1 p-6">
+                <div className="max-w-[1600px] mx-auto flex flex-col gap-6">
+                    {/* Header */}
+                    <div className="flex justify-between items-end">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white tracking-tight">Sales History</h2>
+                            <p className="text-slate-400 text-sm mt-1">View and manage all sales transactions</p>
+                        </div>
+                        <Link href="/dashboard/sales/new">
+                            <button className="px-4 py-2 bg-[#137fec] hover:bg-blue-600 rounded-lg text-sm font-medium text-white flex items-center gap-2 shadow-lg shadow-[#137fec]/20 transition-colors">
+                                <Plus className="h-4 w-4" />
+                                New Sale
+                            </button>
+                        </Link>
                     </div>
-                    <Link href="/dashboard/sales/new">
-                        <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg">
-                            <DollarSign className="mr-2 h-4 w-4" />
-                            New Sale
-                        </Button>
-                    </Link>
-                </div>
 
-                {/* Summary Cards */}
-                <div className="grid gap-4 md:grid-cols-4 mb-6">
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-blue-50">
-                                Total Sales
-                            </CardTitle>
-                            <TrendingUp className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                Rs {summary.total.toLocaleString()}
+                    {/* Summary Cards - Enhanced with gradients */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Total Sales */}
+                        <div className="p-5 rounded-xl bg-gradient-to-br from-[#16212b] to-[#1a2530] border border-[rgba(255,255,255,0.1)] relative overflow-hidden shadow-xl hover:shadow-2xl transition-all group">
+                            <div className="absolute right-4 top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <TrendingUp className="h-16 w-16 text-[#137fec]" />
                             </div>
-                            <p className="text-xs text-blue-100 mt-1">
-                                {summary.count} transactions
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-green-50">
-                                Cash Sales
-                            </CardTitle>
-                            <Banknote className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                Rs {summary.cash.toLocaleString()}
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-2 bg-[#137fec]/10 rounded-lg">
+                                        <TrendingUp className="h-4 w-4 text-[#137fec]" />
+                                    </div>
+                                    <p className="text-slate-400 text-sm font-medium">Total Sales</p>
+                                </div>
+                                <h3 className="text-3xl font-bold text-white mb-2">
+                                    Rs {summary.total.toLocaleString()}
+                                </h3>
+                                <p className="text-xs text-slate-500">{summary.count} transactions</p>
                             </div>
-                            <p className="text-xs text-green-100 mt-1">
-                                {filteredSales.filter(s => s.payment_type === "CASH").length} transactions
-                            </p>
-                        </CardContent>
-                    </Card>
+                        </div>
 
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-orange-50">
-                                Credit Sales
-                            </CardTitle>
-                            <CreditCard className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                Rs {summary.credit.toLocaleString()}
+                        {/* Cash Sales */}
+                        <div className="p-5 rounded-xl bg-gradient-to-br from-[#16212b] to-[#1a2530] border border-[rgba(255,255,255,0.1)] relative overflow-hidden shadow-xl hover:shadow-2xl transition-all group">
+                            <div className="absolute right-4 top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Banknote className="h-16 w-16 text-emerald-500" />
                             </div>
-                            <p className="text-xs text-orange-100 mt-1">
-                                {filteredSales.filter(s => s.payment_type === "CREDIT").length} transactions
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-purple-50">
-                                Average Sale
-                            </CardTitle>
-                            <DollarSign className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                Rs {summary.count > 0 ? Math.round(summary.total / summary.count).toLocaleString() : 0}
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                        <Banknote className="h-4 w-4 text-emerald-500" />
+                                    </div>
+                                    <p className="text-slate-400 text-sm font-medium">Cash Sales</p>
+                                </div>
+                                <h3 className="text-3xl font-bold text-white mb-2">
+                                    Rs {summary.cash.toLocaleString()}
+                                </h3>
+                                <p className="text-xs text-slate-500">
+                                    {filteredSales.filter(s => s.payment_type === "CASH").length} transactions
+                                </p>
                             </div>
-                            <p className="text-xs text-purple-100 mt-1">
-                                Per transaction
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
 
-                {/* Filters */}
-                <Card className="shadow-lg border-none mb-6">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Filter className="h-5 w-5" />
-                            Filters & Search
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                        {/* Credit Sales */}
+                        <div className="p-5 rounded-xl bg-gradient-to-br from-[#16212b] to-[#1a2530] border border-[rgba(255,255,255,0.1)] relative overflow-hidden shadow-xl hover:shadow-2xl transition-all group">
+                            <div className="absolute right-4 top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <CreditCard className="h-16 w-16 text-amber-500" />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-2 bg-amber-500/10 rounded-lg">
+                                        <CreditCard className="h-4 w-4 text-amber-500" />
+                                    </div>
+                                    <p className="text-slate-400 text-sm font-medium">Credit Sales</p>
+                                </div>
+                                <h3 className="text-3xl font-bold text-white mb-2">
+                                    Rs {summary.credit.toLocaleString()}
+                                </h3>
+                                <p className="text-xs text-slate-500">
+                                    {filteredSales.filter(s => s.payment_type === "CREDIT").length} transactions
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Average Sale */}
+                        <div className="p-5 rounded-xl bg-gradient-to-br from-[#16212b] to-[#1a2530] border border-[rgba(255,255,255,0.1)] relative overflow-hidden shadow-xl hover:shadow-2xl transition-all group">
+                            <div className="absolute right-4 top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <DollarSign className="h-16 w-16 text-purple-500" />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-2 bg-purple-500/10 rounded-lg">
+                                        <DollarSign className="h-4 w-4 text-purple-500" />
+                                    </div>
+                                    <p className="text-slate-400 text-sm font-medium">Average Sale</p>
+                                </div>
+                                <h3 className="text-3xl font-bold text-white mb-2">
+                                    Rs {summary.count > 0 ? Math.round(summary.total / summary.count).toLocaleString() : 0}
+                                </h3>
+                                <p className="text-xs text-slate-500">Per transaction</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 shadow-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 bg-[#137fec]/10 rounded-lg">
+                                <Filter className="h-4 w-4 text-[#137fec]" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white">Filters & Search</h3>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             {/* Search */}
                             <div className="md:col-span-2">
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                                     <Input
-                                        placeholder="Search by customer, transaction ID, or sale ID..."
+                                        placeholder="Search by customer, transaction ID..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-9"
+                                        className="pl-9 bg-[#1e2b38] border-[rgba(255,255,255,0.1)] text-white placeholder:text-slate-500 focus:ring-2 focus:ring-[#137fec]/50"
                                     />
                                 </div>
                             </div>
 
                             {/* Payment Type Filter */}
                             <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-[#1e2b38] border-[rgba(255,255,255,0.1)] text-white">
                                     <SelectValue placeholder="Payment Type" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -251,7 +284,7 @@ export default function SalesPage() {
 
                             {/* Date Filter */}
                             <Select value={dateFilter} onValueChange={setDateFilter}>
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-[#1e2b38] border-[rgba(255,255,255,0.1)] text-white">
                                     <SelectValue placeholder="Date Range" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -265,183 +298,257 @@ export default function SalesPage() {
 
                         {/* Active Filters */}
                         {(searchQuery || paymentFilter !== "all" || dateFilter !== "all") && (
-                            <div className="flex items-center gap-2 mt-4">
-                                <span className="text-sm text-muted-foreground">Active filters:</span>
+                            <div className="flex items-center gap-2 mt-4 flex-wrap">
+                                <span className="text-sm text-slate-400">Active filters:</span>
                                 {searchQuery && (
-                                    <Badge variant="secondary" className="gap-1">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#137fec]/20 text-[#137fec] border border-[#137fec]/20 gap-1">
                                         Search: {searchQuery}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchQuery("")} />
-                                    </Badge>
+                                        <X className="h-3 w-3 cursor-pointer hover:text-[#137fec]/80" onClick={() => setSearchQuery("")} />
+                                    </span>
                                 )}
                                 {paymentFilter !== "all" && (
-                                    <Badge variant="secondary" className="gap-1">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#137fec]/20 text-[#137fec] border border-[#137fec]/20 gap-1">
                                         {paymentFilter}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setPaymentFilter("all")} />
-                                    </Badge>
+                                        <X className="h-3 w-3 cursor-pointer hover:text-[#137fec]/80" onClick={() => setPaymentFilter("all")} />
+                                    </span>
                                 )}
                                 {dateFilter !== "all" && (
-                                    <Badge variant="secondary" className="gap-1">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#137fec]/20 text-[#137fec] border border-[#137fec]/20 gap-1">
                                         {dateFilter === "today" ? "Today" : dateFilter === "week" ? "Last 7 Days" : "Last 30 Days"}
-                                        <X className="h-3 w-3 cursor-pointer" onClick={() => setDateFilter("all")} />
-                                    </Badge>
+                                        <X className="h-3 w-3 cursor-pointer hover:text-[#137fec]/80" onClick={() => setDateFilter("all")} />
+                                    </span>
                                 )}
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
 
-                {/* Sales List */}
-                <Card className="shadow-lg border-none">
-                    <CardHeader>
-                        <CardTitle>Sales Transactions</CardTitle>
-                        <CardDescription>
-                            Showing {filteredSales.length} of {sales.length} sales
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                Loading sales...
-                            </div>
-                        ) : filteredSales.length === 0 ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                <p>No sales found</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {filteredSales.map((sale) => (
-                                    <div
-                                        key={sale.id}
-                                        className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors border-2 border-transparent hover:border-blue-500 cursor-pointer"
-                                        onClick={() => setSelectedSale(sale)}
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4 flex-1">
+                    {/* Sales List */}
+                    <div className="bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-xl overflow-hidden shadow-xl">
+                        <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-[#16212b] to-[#1a2530]">
+                            <h3 className="text-lg font-bold text-white">Sales Transactions</h3>
+                            <p className="text-sm text-slate-400 mt-1">
+                                Showing {filteredSales.length} of {sales.length} sales
+                            </p>
+                        </div>
+                        <div className="p-6">
+                            {loading ? (
+                                <div className="text-center py-12 text-slate-400">
+                                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#137fec] border-r-transparent mb-4"></div>
+                                    <p>Loading sales...</p>
+                                </div>
+                            ) : paginatedSales.length === 0 ? (
+                                <div className="text-center py-12 text-slate-400">
+                                    <div className="inline-block p-4 bg-[#1e2b38] rounded-full mb-4">
+                                        <ShoppingCart className="h-12 w-12 opacity-50" />
+                                    </div>
+                                    <p className="text-lg font-medium">No sales found</p>
+                                    <p className="text-sm mt-1">Try adjusting your filters</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {paginatedSales.map((sale) => (
+                                        <div
+                                            key={sale.id}
+                                            className="p-4 rounded-xl bg-gradient-to-br from-[#1e2b38]/50 to-[#1a2530]/50 hover:from-[#1e2b38] hover:to-[#1a2530] transition-all duration-300 border border-[rgba(255,255,255,0.08)] hover:border-[#137fec]/50 cursor-pointer group hover:shadow-lg"
+                                            onClick={() => setSelectedSale(sale)}
+                                        >
+                                            <div className="flex items-center justify-between gap-4">
                                                 {/* Icon */}
-                                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg flex-shrink-0">
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#137fec] to-blue-600 shadow-lg group-hover:shadow-[#137fec]/30 transition-shadow flex-shrink-0">
                                                     <DollarSign className="h-6 w-6 text-white" />
                                                 </div>
 
                                                 {/* Customer Info */}
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-base truncate">
-                                                        {sale.customer_name}
-                                                    </p>
-                                                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                                    <p className="font-bold text-white truncate text-base">{sale.customer_name}</p>
+                                                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                                                         {sale.transaction_id && (
-                                                            <p className="text-xs font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-2 py-1 rounded flex items-center gap-1">
+                                                            <span className="text-xs font-mono text-[#137fec] bg-[#137fec]/10 px-2.5 py-1 rounded-md flex items-center gap-1 border border-[#137fec]/20">
                                                                 <Hash className="h-3 w-3" />
                                                                 {sale.transaction_id}
-                                                            </p>
+                                                            </span>
                                                         )}
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <span className="text-sm text-slate-400 flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" />
                                                             {formatDate(sale.transaction_date)}
-                                                        </p>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        </span>
+                                                        <span className="text-sm text-slate-400">
                                                             {formatTime(sale.transaction_date)}
-                                                        </p>
-                                                        <Badge variant={sale.payment_type === "CASH" ? "default" : "secondary"} className="text-xs">
-                                                            {sale.payment_type}
-                                                        </Badge>
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {/* Amount */}
-                                            <div className="text-right">
-                                                <p className="text-xl font-bold">
-                                                    Rs {sale.total_amount.toLocaleString()}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {sale.sale_items?.length || 0} items
-                                                </p>
-                                            </div>
+                                                {/* Payment Badge */}
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                                    sale.payment_type === "CASH"
+                                                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                                        : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                                                }`}>
+                                                    {sale.payment_type}
+                                                </span>
 
-                                            {/* View Button */}
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="ml-2"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedSale(sale);
-                                                }}
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
+                                                {/* Amount & View Button */}
+                                                <div className="text-right flex items-center gap-4">
+                                                    <div>
+                                                        <p className="text-xl font-bold text-white">
+                                                            Rs {sale.total_amount.toLocaleString()}
+                                                        </p>
+                                                        <p className="text-xs text-slate-400 mt-0.5">
+                                                            {sale.sale_items?.length || 0} items
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        className="p-2.5 rounded-lg bg-[#137fec]/10 text-[#137fec] hover:bg-[#137fec]/20 transition-all opacity-0 group-hover:opacity-100 hover:scale-110"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedSale(sale);
+                                                        }}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pagination Footer */}
+                        {filteredSales.length > 0 && (
+                            <div className="px-6 py-4 border-t border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-[#16212b] to-[#1a2530] flex items-center justify-between">
+                                <span className="text-sm text-slate-400">
+                                    Showing <span className="text-white font-semibold">{startIndex + 1}-{Math.min(endIndex, filteredSales.length)}</span> of <span className="text-white font-semibold">{filteredSales.length}</span>
+                                </span>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handlePrevPage}
+                                        disabled={currentPage === 1}
+                                        className="p-2 rounded-lg bg-[#1e2b38] hover:bg-[#137fec]/20 text-slate-400 hover:text-[#137fec] transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-[rgba(255,255,255,0.08)]"
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={handleNextPage}
+                                        disabled={currentPage === totalPages || filteredSales.length === 0}
+                                        className="p-2 rounded-lg bg-[#1e2b38] hover:bg-[#137fec]/20 text-white hover:text-[#137fec] transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-[rgba(255,255,255,0.08)]"
+                                    >
+                                        <ChevronRight className="h-5 w-5" />
+                                    </button>
+                                </div>
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
-            {/* Sale Details Modal */}
+            {/* Footer */}
+            <footer className="bg-[#16212b] border-t border-[rgba(255,255,255,0.1)] mt-auto">
+                <div className="max-w-[1600px] mx-auto px-6 py-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-gradient-to-br from-[#137fec] to-blue-600 rounded-lg w-8 h-8 flex items-center justify-center">
+                                <ShoppingCart className="h-4 w-4 text-white" />
+                            </div>
+                            <div>
+                                <p className="text-white text-sm font-semibold">BevPOS</p>
+                                <p className="text-slate-500 text-xs">Enterprise Inventory System</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-6 text-xs text-slate-400">
+                            <Link href="/dashboard/help" className="hover:text-white transition-colors flex items-center gap-1">
+                                Help Center
+                                <ArrowUpRight className="h-3 w-3" />
+                            </Link>
+                            <Link href="/dashboard/privacy" className="hover:text-white transition-colors">
+                                Privacy Policy
+                            </Link>
+                            <Link href="/dashboard/terms" className="hover:text-white transition-colors">
+                                Terms of Service
+                            </Link>
+                        </div>
+
+                        <div className="text-xs text-slate-500">
+                            © 2026 BevPOS. All rights reserved.
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
+            {/* Sale Details Modal - Premium Enhanced */}
             {selectedSale && (
                 <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
                     onClick={() => setSelectedSale(null)}
                 >
-                    <Card
-                        className="max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+                    <div
+                        className="bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <CardHeader className="border-b">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle className="text-2xl">Sale Details</CardTitle>
-                                    <CardDescription className="mt-1 flex items-center gap-2">
-                                        {selectedSale.transaction_id ? (
-                                            <>
-                                                <Hash className="h-4 w-4" />
-                                                Transaction ID: {selectedSale.transaction_id}
-                                            </>
-                                        ) : (
-                                            `Sale ID: ${selectedSale.id.slice(0, 8)}`
-                                        )}
-                                    </CardDescription>
-                                </div>
-                                <Button variant="ghost" size="icon" onClick={() => setSelectedSale(null)}>
-                                    <X className="h-5 w-5" />
-                                </Button>
+                        {/* Modal Header */}
+                        <div className="px-6 py-5 border-b border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-[#16212b] to-[#1a2530] flex items-center justify-between rounded-t-2xl">
+                            <div>
+                                <h3 className="text-2xl font-bold text-white">Sale Details</h3>
+                                <p className="text-sm text-slate-400 mt-1 flex items-center gap-2">
+                                    {selectedSale.transaction_id ? (
+                                        <>
+                                            <Hash className="h-4 w-4" />
+                                            Transaction ID: {selectedSale.transaction_id}
+                                        </>
+                                    ) : (
+                                        `Sale ID: ${selectedSale.id.slice(0, 8)}`
+                                    )}
+                                </p>
                             </div>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-6">
+                            <button
+                                className="p-2 rounded-lg hover:bg-[#1e2b38] text-slate-400 hover:text-white transition-colors"
+                                onClick={() => setSelectedSale(null)}
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 space-y-5">
                             {/* Customer & Payment Info */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl">
+                                <div className="p-4 bg-gradient-to-br from-[#1e2b38] to-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-xl">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                            Customer
-                                        </p>
+                                        <div className="p-1.5 bg-[#137fec]/10 rounded-lg">
+                                            <User className="h-4 w-4 text-[#137fec]" />
+                                        </div>
+                                        <p className="text-sm font-medium text-slate-400">Customer</p>
                                     </div>
-                                    <p className="font-bold text-lg">{selectedSale.customer_name}</p>
+                                    <p className="font-bold text-lg text-white">{selectedSale.customer_name}</p>
                                 </div>
 
-                                <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-xl">
+                                <div className="p-4 bg-gradient-to-br from-[#1e2b38] to-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-xl">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <CreditCard className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                        <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                                            Payment Method
-                                        </p>
+                                        <div className="p-1.5 bg-[#137fec]/10 rounded-lg">
+                                            <CreditCard className="h-4 w-4 text-[#137fec]" />
+                                        </div>
+                                        <p className="text-sm font-medium text-slate-400">Payment Method</p>
                                     </div>
-                                    <Badge variant={selectedSale.payment_type === "CASH" ? "default" : "secondary"}>
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                        selectedSale.payment_type === "CASH"
+                                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                            : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                                    }`}>
                                         {selectedSale.payment_type}
-                                    </Badge>
+                                    </span>
                                 </div>
                             </div>
 
                             {/* Date & Time */}
-                            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                            <div className="p-4 bg-gradient-to-br from-[#1e2b38] to-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-xl">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <Calendar className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                                    <p className="text-sm font-medium">Transaction Date</p>
+                                    <div className="p-1.5 bg-[#137fec]/10 rounded-lg">
+                                        <Calendar className="h-4 w-4 text-[#137fec]" />
+                                    </div>
+                                    <p className="text-sm font-medium text-slate-400">Transaction Date</p>
                                 </div>
-                                <p className="font-semibold">
+                                <p className="font-semibold text-white">
                                     {formatDate(selectedSale.transaction_date)} at {formatTime(selectedSale.transaction_date)}
                                 </p>
                             </div>
@@ -449,22 +556,24 @@ export default function SalesPage() {
                             {/* Items */}
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                                    <h3 className="font-bold text-lg">Items Sold</h3>
+                                    <div className="p-1.5 bg-[#137fec]/10 rounded-lg">
+                                        <Package className="h-5 w-5 text-[#137fec]" />
+                                    </div>
+                                    <h4 className="font-bold text-lg text-white">Items Sold</h4>
                                 </div>
                                 <div className="space-y-2">
                                     {selectedSale.sale_items?.map((item: any, index: number) => (
                                         <div
                                             key={index}
-                                            className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center justify-between"
+                                            className="p-4 bg-gradient-to-br from-[#1e2b38] to-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-xl flex items-center justify-between hover:border-[#137fec]/30 transition-colors"
                                         >
                                             <div>
-                                                <p className="font-semibold">{item.product_name}</p>
-                                                <p className="text-sm text-muted-foreground">
+                                                <p className="font-semibold text-white mb-1">{item.product_name}</p>
+                                                <p className="text-sm text-slate-400">
                                                     {item.quantity} × Rs {item.unit_price.toLocaleString()}
                                                 </p>
                                             </div>
-                                            <p className="font-bold">
+                                            <p className="font-bold text-xl text-white">
                                                 Rs {item.total_price.toLocaleString()}
                                             </p>
                                         </div>
@@ -473,16 +582,16 @@ export default function SalesPage() {
                             </div>
 
                             {/* Total */}
-                            <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl">
+                            <div className="p-5 bg-gradient-to-br from-[#137fec] to-blue-600 rounded-xl shadow-lg shadow-[#137fec]/20">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-lg font-semibold">Total Amount</span>
-                                    <span className="text-3xl font-bold">
+                                    <span className="text-lg font-semibold text-white">Total Amount</span>
+                                    <span className="text-4xl font-bold text-white">
                                         Rs {selectedSale.total_amount.toLocaleString()}
                                     </span>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
