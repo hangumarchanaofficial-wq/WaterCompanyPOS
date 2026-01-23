@@ -15,10 +15,20 @@ import {
     ArrowUpRight,
     ChevronLeft,
     ChevronRight,
+    CheckCircle,
+    AlertCircle,
+    Info
 } from "lucide-react";
 import Link from "next/link";
 import { useProducts } from "@/hooks/useProducts";
 import { supabase } from "@/lib/supabase";
+
+interface CustomAlert {
+    show: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+}
 
 export default function InventoryPage() {
     const { products, loading, refetch } = useProducts();
@@ -29,6 +39,23 @@ export default function InventoryPage() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    // Custom Alert State
+    const [customAlert, setCustomAlert] = useState<CustomAlert>({
+        show: false,
+        type: 'info',
+        title: '',
+        message: ''
+    });
+
+    // Custom Alert Function
+    const showAlert = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
+        setCustomAlert({ show: true, type, title, message });
+    };
+
+    const closeAlert = () => {
+        setCustomAlert({ ...customAlert, show: false });
+    };
 
     // Filter products
     const filteredProducts = useMemo(() => {
@@ -430,7 +457,6 @@ export default function InventoryPage() {
             <footer className="bg-[#16212b] border-t border-[rgba(255,255,255,0.08)] mt-auto">
                 <div className="max-w-[1600px] mx-auto px-6" style={{ paddingTop: '29px', paddingBottom: '29px' }}>
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                        {/* Styled Company Name */}
                         <div className="flex items-center gap-2">
                             <div>
                                 <h2 className="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400" style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>
@@ -439,7 +465,6 @@ export default function InventoryPage() {
                             </div>
                         </div>
 
-                        {/* Navigation Links */}
                         <div className="flex items-center gap-6 text-xs text-slate-400">
                             <Link href="/dashboard/help" className="hover:text-white transition-colors">
                                 Help Center
@@ -452,19 +477,12 @@ export default function InventoryPage() {
                             </Link>
                         </div>
 
-                        {/* Copyright */}
                         <div className="text-xs text-slate-500">
                             © 2026 Shelon. All rights reserved.
                         </div>
                     </div>
                 </div>
-
-                {/* Import Premium Font */}
-                <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
-    `}</style>
             </footer>
-
 
             {/* Edit Product Modal */}
             {selectedProduct && (
@@ -474,6 +492,7 @@ export default function InventoryPage() {
                         setSelectedProduct(null);
                         refetch();
                     }}
+                    showAlert={showAlert}
                 />
             )}
 
@@ -484,14 +503,79 @@ export default function InventoryPage() {
                         setShowAddModal(false);
                         refetch();
                     }}
+                    showAlert={showAlert}
                 />
             )}
+
+            {/* Custom Alert Modal */}
+            {customAlert.show && (
+                <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] animate-in fade-in duration-200"
+                    onClick={closeAlert}
+                >
+                    <div
+                        className="bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Icon */}
+                        <div className="flex items-center justify-center mb-4">
+                            <div className={`rounded-full p-3 ${
+                                customAlert.type === 'success' ? 'bg-emerald-500/10' :
+                                    customAlert.type === 'error' ? 'bg-red-500/10' :
+                                        customAlert.type === 'warning' ? 'bg-amber-500/10' :
+                                            'bg-blue-500/10'
+                            }`}>
+                                {customAlert.type === 'success' && <CheckCircle className="h-8 w-8 text-emerald-500" />}
+                                {customAlert.type === 'error' && <AlertCircle className="h-8 w-8 text-red-500" />}
+                                {customAlert.type === 'warning' && <AlertTriangle className="h-8 w-8 text-amber-500" />}
+                                {customAlert.type === 'info' && <Info className="h-8 w-8 text-blue-500" />}
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-xl font-bold text-white text-center mb-2">
+                            {customAlert.title}
+                        </h3>
+
+                        {/* Message */}
+                        <p className="text-slate-400 text-center text-sm mb-6 whitespace-pre-line">
+                            {customAlert.message}
+                        </p>
+
+                        {/* OK Button */}
+                        <button
+                            onClick={closeAlert}
+                            className={`w-full px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                                customAlert.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                    customAlert.type === 'error' ? 'bg-red-600 hover:bg-red-700' :
+                                        customAlert.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' :
+                                            'bg-blue-600 hover:bg-blue-700'
+                            } text-white`}
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Global Styles */}
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+            `}</style>
         </div>
     );
 }
 
 // Edit Product Modal Component
-function EditProductModal({ product, onClose }: { product: any; onClose: () => void }) {
+function EditProductModal({
+                              product,
+                              onClose,
+                              showAlert
+                          }: {
+    product: any;
+    onClose: () => void;
+    showAlert: (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => void;
+}) {
     const [name, setName] = useState(product.name);
     const [category, setCategory] = useState(product.category);
     const [stock, setStock] = useState(product.stock);
@@ -500,7 +584,7 @@ function EditProductModal({ product, onClose }: { product: any; onClose: () => v
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim() || !category.trim() || stock < 0) {
-            alert("Please fill all fields correctly");
+            showAlert('warning', 'Invalid Input', 'Please fill all fields correctly');
             return;
         }
 
@@ -517,11 +601,11 @@ function EditProductModal({ product, onClose }: { product: any; onClose: () => v
 
             if (error) throw error;
 
-            alert("Product updated successfully!");
+            showAlert('success', 'Product Updated!', 'Product updated successfully!');
             onClose();
         } catch (error) {
             console.error("Error updating product:", error);
-            alert("Failed to update product");
+            showAlert('error', 'Update Failed', 'Failed to update product');
         } finally {
             setIsSubmitting(false);
         }
@@ -620,7 +704,13 @@ function EditProductModal({ product, onClose }: { product: any; onClose: () => v
 }
 
 // Add Product Modal Component
-function AddProductModal({ onClose }: { onClose: () => void }) {
+function AddProductModal({
+                             onClose,
+                             showAlert
+                         }: {
+    onClose: () => void;
+    showAlert: (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => void;
+}) {
     const [name, setName] = useState("");
     const [category, setCategory] = useState("Water");
     const [stock, setStock] = useState(0);
@@ -629,7 +719,7 @@ function AddProductModal({ onClose }: { onClose: () => void }) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim() || !category.trim() || stock < 0) {
-            alert("Please fill all fields correctly");
+            showAlert('warning', 'Invalid Input', 'Please fill all fields correctly');
             return;
         }
 
@@ -647,11 +737,11 @@ function AddProductModal({ onClose }: { onClose: () => void }) {
 
             if (error) throw error;
 
-            alert("Product added successfully!");
+            showAlert('success', 'Product Added!', 'Product added successfully!');
             onClose();
         } catch (error) {
             console.error("Error adding product:", error);
-            alert("Failed to add product");
+            showAlert('error', 'Add Failed', 'Failed to add product');
         } finally {
             setIsSubmitting(false);
         }
