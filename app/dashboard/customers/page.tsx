@@ -20,11 +20,20 @@ import {
     ChevronLeft,
     ChevronRight,
     Trash2,
-    AlertTriangle
+    AlertTriangle,
+    CheckCircle,
+    Info
 } from "lucide-react";
 import Link from "next/link";
 import { useCustomers } from "@/hooks/useCustomers";
 import { customersService } from "@/services/customersService";
+
+interface CustomAlert {
+    show: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+}
 
 export default function CustomersPage() {
     const { customers, loading, refetch } = useCustomers();
@@ -35,6 +44,23 @@ export default function CustomersPage() {
     const [customerToDelete, setCustomerToDelete] = useState<any>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    // Custom Alert State
+    const [customAlert, setCustomAlert] = useState<CustomAlert>({
+        show: false,
+        type: 'info',
+        title: '',
+        message: ''
+    });
+
+    // Custom Alert Function
+    const showAlert = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
+        setCustomAlert({ show: true, type, title, message });
+    };
+
+    const closeAlert = () => {
+        setCustomAlert({ ...customAlert, show: false });
+    };
 
     // Filter customers
     const filteredCustomers = useMemo(() => {
@@ -69,7 +95,11 @@ export default function CustomersPage() {
 
     const handleDeleteClick = (customer: any) => {
         if (customer.credit_balance > 0) {
-            alert(`Cannot delete customer with outstanding debt of Rs ${customer.credit_balance.toLocaleString()}. Please settle all payments first.`);
+            showAlert(
+                'warning',
+                'Cannot Delete Customer',
+                `Cannot delete customer with outstanding debt of Rs ${customer.credit_balance.toLocaleString()}. Please settle all payments first.`
+            );
             return;
         }
         setCustomerToDelete(customer);
@@ -357,7 +387,6 @@ export default function CustomersPage() {
             <footer className="bg-[#16212b] border-t border-[rgba(255,255,255,0.08)] mt-auto">
                 <div className="max-w-[1600px] mx-auto px-6" style={{ paddingTop: '29px', paddingBottom: '29px' }}>
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                        {/* Styled Company Name */}
                         <div className="flex items-center gap-2">
                             <div>
                                 <h2 className="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400" style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>
@@ -366,7 +395,6 @@ export default function CustomersPage() {
                             </div>
                         </div>
 
-                        {/* Navigation Links */}
                         <div className="flex items-center gap-6 text-xs text-slate-400">
                             <Link href="/dashboard/help" className="hover:text-white transition-colors">
                                 Help Center
@@ -379,19 +407,12 @@ export default function CustomersPage() {
                             </Link>
                         </div>
 
-                        {/* Copyright */}
                         <div className="text-xs text-slate-500">
                             © 2026 Shelon. All rights reserved.
                         </div>
                     </div>
                 </div>
-
-                {/* Import Premium Font */}
-                <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
-    `}</style>
             </footer>
-
 
             {/* Edit Customer Modal */}
             {selectedCustomer && (
@@ -401,6 +422,7 @@ export default function CustomersPage() {
                         setSelectedCustomer(null);
                         refetch();
                     }}
+                    showAlert={showAlert}
                 />
             )}
 
@@ -411,6 +433,7 @@ export default function CustomersPage() {
                         setShowAddModal(false);
                         refetch();
                     }}
+                    showAlert={showAlert}
                 />
             )}
 
@@ -427,8 +450,65 @@ export default function CustomersPage() {
                         setCustomerToDelete(null);
                         refetch();
                     }}
+                    showAlert={showAlert}
                 />
             )}
+
+            {/* Custom Alert Modal */}
+            {customAlert.show && (
+                <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] animate-in fade-in duration-200"
+                    onClick={closeAlert}
+                >
+                    <div
+                        className="bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Icon */}
+                        <div className="flex items-center justify-center mb-4">
+                            <div className={`rounded-full p-3 ${
+                                customAlert.type === 'success' ? 'bg-emerald-500/10' :
+                                    customAlert.type === 'error' ? 'bg-red-500/10' :
+                                        customAlert.type === 'warning' ? 'bg-amber-500/10' :
+                                            'bg-blue-500/10'
+                            }`}>
+                                {customAlert.type === 'success' && <CheckCircle className="h-8 w-8 text-emerald-500" />}
+                                {customAlert.type === 'error' && <AlertCircle className="h-8 w-8 text-red-500" />}
+                                {customAlert.type === 'warning' && <AlertTriangle className="h-8 w-8 text-amber-500" />}
+                                {customAlert.type === 'info' && <Info className="h-8 w-8 text-blue-500" />}
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-xl font-bold text-white text-center mb-2">
+                            {customAlert.title}
+                        </h3>
+
+                        {/* Message */}
+                        <p className="text-slate-400 text-center text-sm mb-6 whitespace-pre-line">
+                            {customAlert.message}
+                        </p>
+
+                        {/* OK Button */}
+                        <button
+                            onClick={closeAlert}
+                            className={`w-full px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                                customAlert.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                    customAlert.type === 'error' ? 'bg-red-600 hover:bg-red-700' :
+                                        customAlert.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' :
+                                            'bg-blue-600 hover:bg-blue-700'
+                            } text-white`}
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Global Styles */}
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+            `}</style>
         </div>
     );
 }
@@ -437,11 +517,13 @@ export default function CustomersPage() {
 function DeleteCustomerModal({
                                  customer,
                                  onClose,
-                                 onSuccess
+                                 onSuccess,
+                                 showAlert
                              }: {
     customer: any;
     onClose: () => void;
     onSuccess: () => void;
+    showAlert: (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => void;
 }) {
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -452,11 +534,11 @@ function DeleteCustomerModal({
 
             if (error) throw error;
 
-            alert("Customer deleted successfully!");
+            showAlert('success', 'Customer Deleted!', 'Customer deleted successfully!');
             onSuccess();
         } catch (error) {
             console.error("Error deleting customer:", error);
-            alert("Failed to delete customer. Please try again.");
+            showAlert('error', 'Delete Failed', 'Failed to delete customer. Please try again.');
         } finally {
             setIsDeleting(false);
         }
@@ -565,7 +647,15 @@ function DeleteCustomerModal({
 }
 
 // Edit Customer Modal Component
-function EditCustomerModal({ customer, onClose }: { customer: any; onClose: () => void }) {
+function EditCustomerModal({
+                               customer,
+                               onClose,
+                               showAlert
+                           }: {
+    customer: any;
+    onClose: () => void;
+    showAlert: (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => void;
+}) {
     const [name, setName] = useState(customer.name);
     const [phone, setPhone] = useState(customer.phone || "");
     const [address, setAddress] = useState(customer.address || "");
@@ -574,7 +664,7 @@ function EditCustomerModal({ customer, onClose }: { customer: any; onClose: () =
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) {
-            alert("Please enter customer name");
+            showAlert('warning', 'Name Required', 'Please enter customer name');
             return;
         }
 
@@ -588,11 +678,11 @@ function EditCustomerModal({ customer, onClose }: { customer: any; onClose: () =
 
             if (error) throw error;
 
-            alert("Customer updated successfully!");
+            showAlert('success', 'Customer Updated!', 'Customer updated successfully!');
             onClose();
         } catch (error) {
             console.error("Error updating customer:", error);
-            alert("Failed to update customer");
+            showAlert('error', 'Update Failed', 'Failed to update customer');
         } finally {
             setIsSubmitting(false);
         }
@@ -690,7 +780,13 @@ function EditCustomerModal({ customer, onClose }: { customer: any; onClose: () =
 }
 
 // Add Customer Modal Component
-function AddCustomerModal({ onClose }: { onClose: () => void }) {
+function AddCustomerModal({
+                              onClose,
+                              showAlert
+                          }: {
+    onClose: () => void;
+    showAlert: (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => void;
+}) {
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [address, setAddress] = useState("");
@@ -699,7 +795,7 @@ function AddCustomerModal({ onClose }: { onClose: () => void }) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) {
-            alert("Please enter customer name");
+            showAlert('warning', 'Name Required', 'Please enter customer name');
             return;
         }
 
@@ -713,11 +809,11 @@ function AddCustomerModal({ onClose }: { onClose: () => void }) {
 
             if (error) throw error;
 
-            alert("Customer added successfully!");
+            showAlert('success', 'Customer Added!', 'Customer added successfully!');
             onClose();
         } catch (error) {
             console.error("Error adding customer:", error);
-            alert("Failed to add customer");
+            showAlert('error', 'Add Failed', 'Failed to add customer');
         } finally {
             setIsSubmitting(false);
         }
