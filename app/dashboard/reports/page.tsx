@@ -723,23 +723,22 @@ export default function ReportsPage() {
             </div>
 
             {/* Footer */}
-            <footer className="bg-[#16212b] border-t border-[rgba(255,255,255,0.1)] mt-auto">
-                <div className="max-w-[1600px] mx-auto px-6 py-6">
+            <footer className="bg-[#16212b] border-t border-[rgba(255,255,255,0.08)] mt-auto">
+                <div className="max-w-[1600px] mx-auto px-6" style={{ paddingTop: '29px', paddingBottom: '29px' }}>
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        {/* Styled Company Name */}
                         <div className="flex items-center gap-2">
-                            <div className="bg-gradient-to-br from-[#137fec] to-blue-600 rounded-lg w-8 h-8 flex items-center justify-center">
-                                <BarChart3 className="h-4 w-4 text-white" />
-                            </div>
                             <div>
-                                <p className="text-white text-sm font-semibold">BevPOS</p>
-                                <p className="text-slate-500 text-xs">Enterprise Inventory System</p>
+                                <h2 className="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400" style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>
+                                    SHELON
+                                </h2>
                             </div>
                         </div>
 
+                        {/* Navigation Links */}
                         <div className="flex items-center gap-6 text-xs text-slate-400">
-                            <Link href="/dashboard/help" className="hover:text-white transition-colors flex items-center gap-1">
+                            <Link href="/dashboard/help" className="hover:text-white transition-colors">
                                 Help Center
-                                <ArrowUpRight className="h-3 w-3" />
                             </Link>
                             <Link href="/dashboard/privacy" className="hover:text-white transition-colors">
                                 Privacy Policy
@@ -749,12 +748,19 @@ export default function ReportsPage() {
                             </Link>
                         </div>
 
+                        {/* Copyright */}
                         <div className="text-xs text-slate-500">
-                            © 2026 BevPOS. All rights reserved.
+                            © 2026 Shelon. All rights reserved.
                         </div>
                     </div>
                 </div>
+
+                {/* Import Premium Font */}
+                <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+    `}</style>
             </footer>
+
         </div>
     );
 }
