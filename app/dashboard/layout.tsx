@@ -1,7 +1,7 @@
 // app/dashboard/layout.tsx
 "use client";
 
-import { Home, ShoppingCart, Users, Package, BarChart3, CreditCard, Settings, LogOut, Receipt } from "lucide-react";
+import { Home, ShoppingCart, Users, Package, BarChart3, CreditCard, LogOut, Receipt } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -15,7 +15,6 @@ const navigation = [
     { name: "Pay Debt", href: "/dashboard/payments", icon: CreditCard },
     { name: "Inventory", href: "/dashboard/inventory", icon: Package },
     { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export default function DashboardLayout({
@@ -36,10 +35,8 @@ export default function DashboardLayout({
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (!session) {
-                    console.log("No session found, redirecting to login");
                     router.push('/login');
                 } else {
-                    console.log("Session found, user authenticated");
                     setIsCheckingAuth(false);
                 }
             } catch (error) {
@@ -74,7 +71,6 @@ export default function DashboardLayout({
             localStorage.removeItem("isAuthenticated");
             localStorage.removeItem("userId");
 
-            console.log("Logged out successfully");
             window.location.href = "/login";
         } catch (error) {
             console.error("Logout error:", error);
@@ -88,7 +84,7 @@ export default function DashboardLayout({
         return (
             <div className="min-h-screen bg-[#0a0e1a] flex items-center justify-center">
                 <div className="text-center">
-                    <div className="inline-block h-12 w-12 border-4 border-[#0ea5e9] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <div className="inline-block h-12 w-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                     <p className="text-slate-400 text-sm">Verifying authentication...</p>
                 </div>
             </div>
@@ -99,20 +95,12 @@ export default function DashboardLayout({
         <div className="flex h-screen bg-[#0a0e1a] overflow-hidden">
             {/* Sidebar */}
             <aside className="w-72 bg-[#1a2332] border-r border-[#2d3748] flex flex-col shadow-2xl">
-                {/* Logo */}
+                {/* Brand Name - Premium Style */}
                 <div className="p-6 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-gradient-to-br from-[#0ea5e9] to-blue-600 rounded-lg w-10 h-10 flex items-center justify-center shadow-lg shadow-[#0ea5e9]/20">
-                            <Package className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-white text-lg font-bold leading-tight tracking-tight">
-                                BevPOS
-                            </h1>
-                            <p className="text-slate-400 text-xs font-medium">
-                                Enterprise Inventory
-                            </p>
-                        </div>
+                    <div className="flex items-center justify-center">
+                        <h1 className="text-3xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]" style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>
+                            SHELON
+                        </h1>
                     </div>
                 </div>
 
@@ -132,7 +120,7 @@ export default function DashboardLayout({
                                 className={`
                                     flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group
                                     ${isActive
-                                    ? 'bg-[#0ea5e9] text-white shadow-md shadow-[#0ea5e9]/20'
+                                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
                                     : 'text-slate-400 hover:text-white hover:bg-[#0f172a]'
                                 }
                                 `}
@@ -156,7 +144,7 @@ export default function DashboardLayout({
                                 className={`
                                     flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group
                                     ${isActive
-                                    ? 'bg-[#0ea5e9] text-white shadow-md shadow-[#0ea5e9]/20'
+                                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
                                     : 'text-slate-400 hover:text-white hover:bg-[#0f172a]'
                                 }
                                 `}
@@ -171,7 +159,7 @@ export default function DashboardLayout({
                 {/* User Profile with Logout */}
                 <div className="p-4 border-t border-[#2d3748]" style={{ marginTop: '2px' }}>
                     <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#0f172a] border border-[#2d3748]">
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg text-sm">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white font-bold shadow-lg text-sm">
                             {userEmail.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -211,6 +199,8 @@ export default function DashboardLayout({
 
             {/* Custom Scrollbar Styles */}
             <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+                
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                     height: 6px;
