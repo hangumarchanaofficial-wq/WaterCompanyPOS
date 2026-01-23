@@ -1,7 +1,7 @@
 // app/dashboard/layout.tsx
 "use client";
 
-import { Home, ShoppingCart, Users, Package, BarChart3, CreditCard, LogOut, Receipt } from "lucide-react";
+import { Home, ShoppingCart, Users, Package, BarChart3, CreditCard, LogOut, Receipt, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +27,7 @@ export default function DashboardLayout({
     const [loggingOut, setLoggingOut] = useState(false);
     const [userEmail, setUserEmail] = useState("Admin User");
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     // Check authentication on mount
     useEffect(() => {
@@ -59,12 +60,11 @@ export default function DashboardLayout({
         getUser();
     }, []);
 
-    const handleLogout = async () => {
-        if (loggingOut) return;
+    const handleLogoutClick = () => {
+        setShowLogoutModal(true);
+    };
 
-        const confirmed = window.confirm("Are you sure you want to logout?");
-        if (!confirmed) return;
-
+    const handleLogoutConfirm = async () => {
         setLoggingOut(true);
         try {
             await supabase.auth.signOut();
@@ -76,7 +76,12 @@ export default function DashboardLayout({
             console.error("Logout error:", error);
             alert("Failed to logout. Please try again.");
             setLoggingOut(false);
+            setShowLogoutModal(false);
         }
+    };
+
+    const handleLogoutCancel = () => {
+        setShowLogoutModal(false);
     };
 
     // Show loading spinner while checking auth
@@ -171,7 +176,7 @@ export default function DashboardLayout({
                             </p>
                         </div>
                         <button
-                            onClick={handleLogout}
+                            onClick={handleLogoutClick}
                             disabled={loggingOut}
                             className="text-slate-400 hover:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group relative"
                             title="Logout"
@@ -196,6 +201,55 @@ export default function DashboardLayout({
                     {children}
                 </main>
             </div>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
+                    <div className="bg-[#1a2332] border border-[#2d3748] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 animate-in zoom-in-95 duration-200">
+                        {/* Icon */}
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="bg-red-500/10 rounded-full p-3">
+                                <AlertTriangle className="h-8 w-8 text-red-500" />
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-xl font-bold text-white text-center mb-2">
+                            Confirm Logout
+                        </h3>
+
+                        {/* Message */}
+                        <p className="text-slate-400 text-center text-sm mb-6">
+                            Are you sure you want to logout? You will need to sign in again to access your dashboard.
+                        </p>
+
+                        {/* Buttons */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleLogoutCancel}
+                                disabled={loggingOut}
+                                className="flex-1 px-4 py-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-slate-300 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleLogoutConfirm}
+                                disabled={loggingOut}
+                                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {loggingOut ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        Logging out...
+                                    </>
+                                ) : (
+                                    'Logout'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Custom Scrollbar Styles */}
             <style jsx global>{`
