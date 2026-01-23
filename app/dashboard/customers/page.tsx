@@ -1,11 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
     Users,
     Search,
@@ -17,7 +12,17 @@ import {
     X,
     Phone,
     MapPin,
+    ArrowLeft,
+    ArrowUpRight,
+    AlertCircle,
+    CheckCircle2,
+    FileQuestion,
+    ChevronLeft,
+    ChevronRight,
+    Trash2,
+    AlertTriangle
 } from "lucide-react";
+import Link from "next/link";
 import { useCustomers } from "@/hooks/useCustomers";
 import { customersService } from "@/services/customersService";
 
@@ -26,6 +31,10 @@ export default function CustomersPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [customerToDelete, setCustomerToDelete] = useState<any>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Filter customers
     const filteredCustomers = useMemo(() => {
@@ -47,189 +56,336 @@ export default function CustomersPage() {
         return { totalCustomers, customersWithCredit, totalCredit, avgCredit };
     }, [customers]);
 
+    // Pagination
+    const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+    const paginatedCustomers = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredCustomers.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredCustomers, currentPage]);
+
+    const goToPage = (page: number) => {
+        setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    };
+
+    const handleDeleteClick = (customer: any) => {
+        if (customer.credit_balance > 0) {
+            alert(`Cannot delete customer with outstanding debt of Rs ${customer.credit_balance.toLocaleString()}. Please settle all payments first.`);
+            return;
+        }
+        setCustomerToDelete(customer);
+        setShowDeleteModal(true);
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-6">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                            Customers
-                        </h1>
-                        <p className="text-muted-foreground mt-1">
-                            Manage your customer database
-                        </p>
+        <div className="min-h-screen bg-[#101922] flex flex-col">
+            <div className="flex-1 p-6">
+                <div className="max-w-[1600px] mx-auto">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            <Link href="/dashboard">
+                                <button className="p-2 rounded-lg bg-[#16212b] border border-[rgba(255,255,255,0.1)] hover:bg-[#1e2b38] text-white transition-colors">
+                                    <ArrowLeft className="h-5 w-5" />
+                                </button>
+                            </Link>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white tracking-tight">Customers</h2>
+                                <p className="text-slate-400 text-sm mt-1">Manage your customer database</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm font-medium text-white flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-colors"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Customer
+                        </button>
                     </div>
-                    <Button
-                        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
-                        onClick={() => setShowAddModal(true)}
-                    >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Customer
-                    </Button>
-                </div>
 
-                {/* Summary Cards */}
-                <div className="grid gap-4 md:grid-cols-4 mb-6">
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-blue-50">
-                                Total Customers
-                            </CardTitle>
-                            <Users className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{summary.totalCustomers}</div>
-                            <p className="text-xs text-blue-100 mt-1">Registered customers</p>
-                        </CardContent>
-                    </Card>
+                    {/* Summary Cards */}
+                    <div className="grid gap-4 md:grid-cols-4 mb-6">
+                        <div className="bg-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 shadow-xl">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="p-2.5 bg-[#137fec]/10 rounded-lg">
+                                    <Users className="h-5 w-5 text-[#137fec]" />
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-400 mb-1">Total Customers</p>
+                            <div className="text-3xl font-bold text-white mb-1">
+                                {summary.totalCustomers}
+                            </div>
+                            <p className="text-xs text-slate-500">Registered customers</p>
+                        </div>
 
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-orange-50">
-                                With Credit
-                            </CardTitle>
-                            <TrendingUp className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{summary.customersWithCredit}</div>
-                            <p className="text-xs text-orange-100 mt-1">Have outstanding debt</p>
-                        </CardContent>
-                    </Card>
+                        <div className="bg-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 shadow-xl">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="p-2.5 bg-amber-500/10 rounded-lg">
+                                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-400 mb-1">With Credit Balance</p>
+                            <div className="text-3xl font-bold text-white mb-1">
+                                {summary.customersWithCredit}
+                            </div>
+                            <p className="text-xs text-slate-500">Have outstanding debt</p>
+                        </div>
 
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-red-500 to-red-600 text-white">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-red-50">
-                                Total Credit
-                            </CardTitle>
-                            <DollarSign className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
+                        <div className="bg-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 shadow-xl">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="p-2.5 bg-red-500/10 rounded-lg">
+                                    <DollarSign className="h-5 w-5 text-red-500" />
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-400 mb-1">Total Outstanding</p>
+                            <div className="text-3xl font-bold text-white mb-1">
                                 Rs {summary.totalCredit.toLocaleString()}
                             </div>
-                            <p className="text-xs text-red-100 mt-1">Outstanding amount</p>
-                        </CardContent>
-                    </Card>
+                            <p className="text-xs text-slate-500">Outstanding amount</p>
+                        </div>
 
-                    <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-purple-50">
-                                Avg Credit
-                            </CardTitle>
-                            <User className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
+                        <div className="bg-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 shadow-xl">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="p-2.5 bg-purple-500/10 rounded-lg">
+                                    <TrendingUp className="h-5 w-5 text-purple-500" />
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-400 mb-1">Average Credit</p>
+                            <div className="text-3xl font-bold text-white mb-1">
                                 Rs {Math.round(summary.avgCredit).toLocaleString()}
                             </div>
-                            <p className="text-xs text-purple-100 mt-1">Per debtor</p>
-                        </CardContent>
-                    </Card>
-                </div>
+                            <p className="text-xs text-slate-500">Per debtor</p>
+                        </div>
+                    </div>
 
-                {/* Search */}
-                <Card className="shadow-lg border-none mb-6">
-                    <CardContent className="pt-6">
+                    {/* Search */}
+                    <div className="bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl p-6 mb-6">
                         <div className="relative">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
+                            <Search className="absolute left-3 top-3 h-5 w-5 text-slate-500 pointer-events-none" />
+                            <input
+                                type="text"
                                 placeholder="Search customers by name or phone..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9"
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="w-full pl-10 pr-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] text-white placeholder:text-slate-500 focus:ring-2 focus:ring-[#137fec]/50 focus:border-[#137fec] outline-none transition-all"
                             />
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
 
-                {/* Customers List */}
-                <Card className="shadow-lg border-none">
-                    <CardHeader>
-                        <CardTitle>All Customers</CardTitle>
-                        <CardDescription>
-                            Showing {filteredCustomers.length} of {customers.length} customers
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                Loading customers...
+                    {/* Customers List */}
+                    <div className="bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-xl overflow-hidden">
+                        <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-[#16212b] to-[#1a2530]">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-[#137fec]/10 rounded-lg">
+                                    <Users className="h-5 w-5 text-[#137fec]" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white">All Customers</h3>
+                                    <p className="text-sm text-slate-400">
+                                        Showing {paginatedCustomers.length} of {filteredCustomers.length} customers
+                                    </p>
+                                </div>
                             </div>
-                        ) : filteredCustomers.length === 0 ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                <p>No customers found</p>
-                            </div>
-                        ) : (
-                            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                                {filteredCustomers.map((customer) => (
-                                    <div
-                                        key={customer.id}
-                                        className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors border-2 border-transparent hover:border-blue-500"
-                                    >
-                                        {/* Customer Header */}
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg">
-                                                <User className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="p-6">
+                            {loading ? (
+                                <div className="text-center py-12 text-slate-400">
+                                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#137fec] border-r-transparent mb-4"></div>
+                                    <p>Loading customers...</p>
+                                </div>
+                            ) : filteredCustomers.length === 0 ? (
+                                <div className="text-center py-12 text-slate-400">
+                                    <div className="inline-block p-4 bg-[#1e2b38] rounded-full mb-4">
+                                        <Users className="h-12 w-12 opacity-50" />
+                                    </div>
+                                    <p className="text-sm">No customers found</p>
+                                    <p className="text-xs mt-1">Try adjusting your search</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                    {paginatedCustomers.map((customer) => (
+                                        <div
+                                            key={customer.id}
+                                            className="p-5 rounded-xl bg-[#1a2530] border border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] transition-all group"
+                                        >
+                                            {/* Customer Header */}
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#137fec] to-blue-600 shadow-lg">
+                                                    <User className="h-7 w-7 text-white" />
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => setSelectedCustomer(customer)}
+                                                        className="p-2 rounded-lg bg-[#16212b] border border-[rgba(255,255,255,0.1)] hover:bg-[#137fec]/20 hover:border-[#137fec] text-slate-400 hover:text-white transition-all"
+                                                        title="Edit customer"
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteClick(customer)}
+                                                        className={`p-2 rounded-lg border transition-all ${
+                                                            customer.credit_balance > 0
+                                                                ? 'bg-[#16212b] border-[rgba(255,255,255,0.1)] text-slate-600 cursor-not-allowed opacity-50'
+                                                                : 'bg-red-500/10 border-red-500/20 hover:bg-red-500/20 hover:border-red-500 text-red-500'
+                                                        }`}
+                                                        title={customer.credit_balance > 0 ? "Cannot delete customer with outstanding debt" : "Delete customer"}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                                onClick={() => setSelectedCustomer(customer)}
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                        </div>
 
-                                        {/* Customer Info */}
-                                        <div>
-                                            <p className="font-bold text-base truncate mb-2">
-                                                {customer.name}
-                                            </p>
+                                            {/* Customer Info */}
+                                            <div className="space-y-2.5 min-h-[80px]">
+                                                <p className="font-bold text-lg text-white truncate">
+                                                    {customer.name}
+                                                </p>
 
-                                            {/* Phone */}
-                                            {customer.phone && (
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                                                    <Phone className="h-3 w-3" />
-                                                    <span>{customer.phone}</span>
-                                                </div>
-                                            )}
+                                                {/* Phone */}
+                                                {customer.phone && (
+                                                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                                                        <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                                                        <span>{customer.phone}</span>
+                                                    </div>
+                                                )}
 
-                                            {/* Address */}
-                                            {customer.address && (
-                                                <div className="flex items-start gap-2 text-xs text-muted-foreground mb-3">
-                                                    <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                                    <span className="line-clamp-2">{customer.address}</span>
-                                                </div>
-                                            )}
+                                                {/* Address */}
+                                                {customer.address && (
+                                                    <div className="flex items-start gap-2 text-sm text-slate-400">
+                                                        <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                                                        <span className="line-clamp-2">{customer.address}</span>
+                                                    </div>
+                                                )}
 
-                                            {/* Credit Balance */}
-                                            <div className="mt-3 pt-3 border-t">
+                                                {/* No Data Message */}
+                                                {!customer.phone && !customer.address && (
+                                                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                                                        <FileQuestion className="h-3.5 w-3.5 flex-shrink-0" />
+                                                        <span className="italic">No contact information</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Credit Balance - Always at Bottom */}
+                                            <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.1)]">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-sm text-muted-foreground">
+                                                    <span className="text-sm text-slate-400">
                                                         Credit Balance
                                                     </span>
                                                     {customer.credit_balance > 0 ? (
-                                                        <Badge variant="destructive">
-                                                            Rs {customer.credit_balance.toLocaleString()}
-                                                        </Badge>
+                                                        <div className="px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded-lg">
+                                                            <span className="text-sm font-bold text-red-400">
+                                                                Rs {customer.credit_balance.toLocaleString()}
+                                                            </span>
+                                                        </div>
                                                     ) : (
-                                                        <Badge variant="outline" className="text-green-600">
-                                                            Paid
-                                                        </Badge>
+                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
+                                                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                                                            <span className="text-sm font-semibold text-emerald-400">
+                                                                Paid
+                                                            </span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="px-6 py-4 border-t border-[rgba(255,255,255,0.1)] bg-[#1a2530]">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-sm text-slate-400">
+                                        Page {currentPage} of {totalPages}
                                     </div>
-                                ))}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => goToPage(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className="p-2 rounded-lg bg-[#16212b] border border-[rgba(255,255,255,0.1)] hover:bg-[#1e2b38] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </button>
+                                        <div className="flex items-center gap-1">
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                let pageNum;
+                                                if (totalPages <= 5) {
+                                                    pageNum = i + 1;
+                                                } else if (currentPage <= 3) {
+                                                    pageNum = i + 1;
+                                                } else if (currentPage >= totalPages - 2) {
+                                                    pageNum = totalPages - 4 + i;
+                                                } else {
+                                                    pageNum = currentPage - 2 + i;
+                                                }
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        onClick={() => goToPage(pageNum)}
+                                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                                            currentPage === pageNum
+                                                                ? 'bg-[#137fec] text-white'
+                                                                : 'bg-[#16212b] border border-[rgba(255,255,255,0.1)] text-slate-400 hover:bg-[#1e2b38]'
+                                                        }`}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <button
+                                            onClick={() => goToPage(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className="p-2 rounded-lg bg-[#16212b] border border-[rgba(255,255,255,0.1)] hover:bg-[#1e2b38] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
+
+            {/* Footer */}
+            <footer className="bg-[#16212b] border-t border-[rgba(255,255,255,0.1)] mt-auto">
+                <div className="max-w-[1600px] mx-auto px-6 py-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-gradient-to-br from-[#137fec] to-blue-600 rounded-lg w-8 h-8 flex items-center justify-center">
+                                <Users className="h-4 w-4 text-white" />
+                            </div>
+                            <div>
+                                <p className="text-white text-sm font-semibold">BevPOS</p>
+                                <p className="text-slate-500 text-xs">Enterprise Inventory System</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-6 text-xs text-slate-400">
+                            <Link href="/dashboard/help" className="hover:text-white transition-colors flex items-center gap-1">
+                                Help Center
+                                <ArrowUpRight className="h-3 w-3" />
+                            </Link>
+                            <Link href="/dashboard/privacy" className="hover:text-white transition-colors">
+                                Privacy Policy
+                            </Link>
+                            <Link href="/dashboard/terms" className="hover:text-white transition-colors">
+                                Terms of Service
+                            </Link>
+                        </div>
+
+                        <div className="text-xs text-slate-500">
+                            © 2026 BevPOS. All rights reserved.
+                        </div>
+                    </div>
+                </div>
+            </footer>
 
             {/* Edit Customer Modal */}
             {selectedCustomer && (
@@ -251,6 +407,153 @@ export default function CustomersPage() {
                     }}
                 />
             )}
+
+            {/* Delete Customer Modal */}
+            {showDeleteModal && customerToDelete && (
+                <DeleteCustomerModal
+                    customer={customerToDelete}
+                    onClose={() => {
+                        setShowDeleteModal(false);
+                        setCustomerToDelete(null);
+                    }}
+                    onSuccess={() => {
+                        setShowDeleteModal(false);
+                        setCustomerToDelete(null);
+                        refetch();
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
+// Delete Customer Modal Component
+function DeleteCustomerModal({
+                                 customer,
+                                 onClose,
+                                 onSuccess
+                             }: {
+    customer: any;
+    onClose: () => void;
+    onSuccess: () => void;
+}) {
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        try {
+            const { error } = await customersService.delete(customer.id);
+
+            if (error) throw error;
+
+            alert("Customer deleted successfully!");
+            onSuccess();
+        } catch (error) {
+            console.error("Error deleting customer:", error);
+            alert("Failed to delete customer. Please try again.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={onClose}
+        >
+            <div
+                className="max-w-md w-full bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-red-500/10 to-orange-500/10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-red-500/20 rounded-lg">
+                            <AlertTriangle className="h-6 w-6 text-red-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">Delete Customer</h3>
+                            <p className="text-sm text-slate-400 mt-1">
+                                This action cannot be undone
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                    <div className="bg-[#1a2530] border border-[rgba(255,255,255,0.1)] rounded-lg p-4 mb-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-sm text-slate-400">Customer Name:</span>
+                                <span className="text-sm text-white font-semibold">
+                                    {customer.name}
+                                </span>
+                            </div>
+                            {customer.phone && (
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-slate-400">Phone:</span>
+                                    <span className="text-sm text-white">
+                                        {customer.phone}
+                                    </span>
+                                </div>
+                            )}
+                            {customer.address && (
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-slate-400">Address:</span>
+                                    <span className="text-sm text-white">
+                                        {customer.address}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex justify-between items-center pt-2 border-t border-[rgba(255,255,255,0.1)]">
+                                <span className="text-sm text-slate-400">Credit Balance:</span>
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                                    <span className="text-sm font-semibold text-emerald-400">
+                                        Fully Paid
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4">
+                        <p className="text-sm text-yellow-500">
+                            <strong>Warning:</strong> Deleting this customer will permanently remove all their information from the system.
+                        </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] hover:bg-[#253544] text-white font-medium transition-all disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></div>
+                                    Deleting...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete Customer
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -291,79 +594,91 @@ function EditCustomerModal({ customer, onClose }: { customer: any; onClose: () =
 
     return (
         <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={onClose}
         >
-            <Card className="max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <CardHeader className="border-b">
+            <div
+                className="max-w-md w-full bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-[#16212b] to-[#1a2530]">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Edit Customer</CardTitle>
-                            <CardDescription className="mt-1">
-                                Update customer information
-                            </CardDescription>
+                            <h3 className="text-lg font-bold text-white">Edit Customer</h3>
+                            <p className="text-sm text-slate-400 mt-1">Update customer information</p>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X className="h-5 w-5" />
-                        </Button>
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-lg bg-[#1e2b38] hover:bg-[#253544] text-white transition-colors"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
                     </div>
-                </CardHeader>
+                </div>
+
+                {/* Form */}
                 <form onSubmit={handleSubmit}>
-                    <CardContent className="pt-6 space-y-4">
+                    <div className="p-6 space-y-4">
                         <div>
-                            <Label htmlFor="name">
+                            <label className="block text-sm font-medium text-slate-300 mb-2">
                                 Customer Name <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="name"
+                            </label>
+                            <input
+                                type="text"
                                 placeholder="Enter customer name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 disabled={isSubmitting}
+                                className="w-full px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] text-white placeholder:text-slate-500 focus:ring-2 focus:ring-[#137fec]/50 focus:border-[#137fec] outline-none transition-all disabled:opacity-50"
                             />
                         </div>
                         <div>
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                                id="phone"
+                            <label className="block text-sm font-medium text-slate-300 mb-2">
+                                Phone Number
+                            </label>
+                            <input
                                 type="tel"
                                 placeholder="Enter phone number"
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 disabled={isSubmitting}
+                                className="w-full px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] text-white placeholder:text-slate-500 focus:ring-2 focus:ring-[#137fec]/50 focus:border-[#137fec] outline-none transition-all disabled:opacity-50"
                             />
                         </div>
                         <div>
-                            <Label htmlFor="address">Address</Label>
-                            <Input
-                                id="address"
+                            <label className="block text-sm font-medium text-slate-300 mb-2">
+                                Address
+                            </label>
+                            <input
+                                type="text"
                                 placeholder="Enter address"
                                 value={address}
                                 onChange={(e) => setAddress(e.target.value)}
                                 disabled={isSubmitting}
+                                className="w-full px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] text-white placeholder:text-slate-500 focus:ring-2 focus:ring-[#137fec]/50 focus:border-[#137fec] outline-none transition-all disabled:opacity-50"
                             />
                         </div>
-                        <div className="flex gap-2 pt-4">
-                            <Button
+                        <div className="flex gap-3 pt-4">
+                            <button
                                 type="button"
-                                variant="outline"
-                                className="flex-1"
                                 onClick={onClose}
                                 disabled={isSubmitting}
+                                className="flex-1 px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] hover:bg-[#253544] text-white font-medium transition-all disabled:opacity-50"
                             >
                                 Cancel
-                            </Button>
-                            <Button
+                            </button>
+                            <button
                                 type="submit"
-                                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700"
                                 disabled={isSubmitting}
+                                className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-br from-[#137fec] to-blue-600 hover:from-[#137fec] hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
                             >
                                 {isSubmitting ? "Saving..." : "Save Changes"}
-                            </Button>
+                            </button>
                         </div>
-                    </CardContent>
+                    </div>
                 </form>
-            </Card>
+            </div>
         </div>
     );
 }
@@ -404,79 +719,91 @@ function AddCustomerModal({ onClose }: { onClose: () => void }) {
 
     return (
         <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={onClose}
         >
-            <Card className="max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <CardHeader className="border-b">
+            <div
+                className="max-w-md w-full bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-xl shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)] bg-gradient-to-r from-[#16212b] to-[#1a2530]">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Add Customer</CardTitle>
-                            <CardDescription className="mt-1">
-                                Create a new customer
-                            </CardDescription>
+                            <h3 className="text-lg font-bold text-white">Add Customer</h3>
+                            <p className="text-sm text-slate-400 mt-1">Create a new customer</p>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X className="h-5 w-5" />
-                        </Button>
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-lg bg-[#1e2b38] hover:bg-[#253544] text-white transition-colors"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
                     </div>
-                </CardHeader>
+                </div>
+
+                {/* Form */}
                 <form onSubmit={handleSubmit}>
-                    <CardContent className="pt-6 space-y-4">
+                    <div className="p-6 space-y-4">
                         <div>
-                            <Label htmlFor="name">
+                            <label className="block text-sm font-medium text-slate-300 mb-2">
                                 Customer Name <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="name"
+                            </label>
+                            <input
+                                type="text"
                                 placeholder="Enter customer name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 disabled={isSubmitting}
+                                className="w-full px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] text-white placeholder:text-slate-500 focus:ring-2 focus:ring-[#137fec]/50 focus:border-[#137fec] outline-none transition-all disabled:opacity-50"
                             />
                         </div>
                         <div>
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                                id="phone"
+                            <label className="block text-sm font-medium text-slate-300 mb-2">
+                                Phone Number
+                            </label>
+                            <input
                                 type="tel"
                                 placeholder="Enter phone number"
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 disabled={isSubmitting}
+                                className="w-full px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] text-white placeholder:text-slate-500 focus:ring-2 focus:ring-[#137fec]/50 focus:border-[#137fec] outline-none transition-all disabled:opacity-50"
                             />
                         </div>
                         <div>
-                            <Label htmlFor="address">Address</Label>
-                            <Input
-                                id="address"
+                            <label className="block text-sm font-medium text-slate-300 mb-2">
+                                Address
+                            </label>
+                            <input
+                                type="text"
                                 placeholder="Enter address"
                                 value={address}
                                 onChange={(e) => setAddress(e.target.value)}
                                 disabled={isSubmitting}
+                                className="w-full px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] text-white placeholder:text-slate-500 focus:ring-2 focus:ring-[#137fec]/50 focus:border-[#137fec] outline-none transition-all disabled:opacity-50"
                             />
                         </div>
-                        <div className="flex gap-2 pt-4">
-                            <Button
+                        <div className="flex gap-3 pt-4">
+                            <button
                                 type="button"
-                                variant="outline"
-                                className="flex-1"
                                 onClick={onClose}
                                 disabled={isSubmitting}
+                                className="flex-1 px-4 py-3 rounded-lg bg-[#1e2b38] border border-[rgba(255,255,255,0.1)] hover:bg-[#253544] text-white font-medium transition-all disabled:opacity-50"
                             >
                                 Cancel
-                            </Button>
-                            <Button
+                            </button>
+                            <button
                                 type="submit"
-                                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700"
                                 disabled={isSubmitting}
+                                className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
                             >
                                 {isSubmitting ? "Adding..." : "Add Customer"}
-                            </Button>
+                            </button>
                         </div>
-                    </CardContent>
+                    </div>
                 </form>
-            </Card>
+            </div>
         </div>
     );
 }
