@@ -15,15 +15,18 @@ import {
     ChevronLeft,
     ChevronRight,
     Wallet,
-    Activity
+    Activity,
+    Download
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useSalesSummary, useTodaySales } from '@/hooks/useSales';
 import { useLowStockProducts } from '@/hooks/useProducts';
 import { useCustomersWithCredit } from '@/hooks/useCustomers';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
+    const router = useRouter();
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage] = useState(10);
 
@@ -185,6 +188,26 @@ export default function DashboardPage() {
     const topDebtors = creditCustomers
         .sort((a, b) => b.credit_balance - a.credit_balance)
         .slice(0, 3);
+
+    // Export Debt Report Function
+    const exportDebtReport = () => {
+        const csvContent = "Customer Name,Phone,Address,Outstanding Balance,Utilization %,Risk Level\n" +
+            creditCustomers
+                .sort((a, b) => b.credit_balance - a.credit_balance)
+                .map(customer => {
+                    const utilization = ((customer.credit_balance / 50000) * 100).toFixed(2);
+                    const riskLevel = customer.credit_balance > 5000 ? 'HIGH' :
+                        customer.credit_balance > 2000 ? 'MEDIUM' : 'LOW';
+                    return `"${customer.name}","${customer.phone || 'N/A'}","${customer.address || 'N/A'}",${customer.credit_balance},${utilization}%,${riskLevel}`;
+                })
+                .join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `debt_report_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+    };
 
     return (
         <div className="min-h-screen bg-[#101922] flex flex-col">
@@ -502,7 +525,7 @@ export default function DashboardPage() {
                                         };
 
                                         const colors = riskColors[riskLevel];
-                                        const utilization = Math.min((debtor.credit_balance / 10000) * 100, 100);
+                                        const utilization = Math.min((debtor.credit_balance / 50000) * 100, 100);
 
                                         return (
                                             <div key={debtor.id}>
@@ -525,7 +548,7 @@ export default function DashboardPage() {
                                                         <div className="flex justify-between text-xs">
                                                             <span className="text-slate-400">Utilization</span>
                                                             <span className={`font-medium ${colors.label}`}>
-                                                                Rs {debtor.credit_balance.toLocaleString()} / 10k
+                                                                Rs {debtor.credit_balance.toLocaleString()} / 50k
                                                             </span>
                                                         </div>
                                                         <div className="h-2 w-full bg-[#1e2b38] rounded-full overflow-hidden">
@@ -536,7 +559,10 @@ export default function DashboardPage() {
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2 mt-1">
-                                                        <button className="flex-1 py-1.5 rounded bg-[#1e2b38] hover:bg-white/10 text-xs text-white font-medium border border-[rgba(255,255,255,0.08)] transition-colors">
+                                                        <button
+                                                            onClick={() => router.push(`/dashboard/customers?id=${debtor.id}`)}
+                                                            className="flex-1 py-1.5 rounded bg-[#1e2b38] hover:bg-white/10 text-xs text-white font-medium border border-[rgba(255,255,255,0.08)] transition-colors"
+                                                        >
                                                             View Profile
                                                         </button>
                                                         <button className="flex-1 py-1.5 rounded bg-[#1e2b38] hover:bg-white/10 text-xs text-white font-medium border border-[rgba(255,255,255,0.08)] transition-colors flex items-center justify-center gap-1">
@@ -552,9 +578,12 @@ export default function DashboardPage() {
                                     })}
                                 </div>
                             )}
-                            <button className="w-full mt-6 py-2 rounded-lg border border-[rgba(255,255,255,0.08)] text-sm text-slate-400 hover:text-white hover:bg-[#1e2b38] transition-colors flex items-center justify-center gap-2">
-                                View Risk Report
-                                <ArrowUpRight className="h-4 w-4" />
+                            <button
+                                onClick={exportDebtReport}
+                                className="w-full mt-6 py-2 rounded-lg border border-[rgba(255,255,255,0.08)] text-sm text-slate-400 hover:text-white hover:bg-[#1e2b38] transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Download className="h-4 w-4" />
+                                Export Debt Report
                             </button>
                         </div>
                     </div>
