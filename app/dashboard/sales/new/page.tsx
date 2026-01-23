@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react"; // Add Fragment import
+import { useState, Fragment } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,11 @@ import {
     Banknote,
     X,
     Hash,
-    ArrowUpRight
+    ArrowUpRight,
+    AlertCircle,
+    CheckCircle,
+    AlertTriangle,
+    Info
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -39,6 +43,13 @@ interface GroupedProduct {
     products: any[];
 }
 
+interface CustomAlert {
+    show: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+}
+
 export default function NewSalePage() {
     const router = useRouter();
 
@@ -54,6 +65,23 @@ export default function NewSalePage() {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [paymentType, setPaymentType] = useState<"CASH" | "CREDIT">("CASH");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Custom Alert State
+    const [customAlert, setCustomAlert] = useState<CustomAlert>({
+        show: false,
+        type: 'info',
+        title: '',
+        message: ''
+    });
+
+    // Custom Alert Function
+    const showAlert = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
+        setCustomAlert({ show: true, type, title, message });
+    };
+
+    const closeAlert = () => {
+        setCustomAlert({ ...customAlert, show: false });
+    };
 
     const parseCapacity = (name: string): number => {
         const match = name.match(/(\d+\.?\d*)\s*(ml|l)/i);
@@ -119,7 +147,7 @@ export default function NewSalePage() {
 
     const addToCart = () => {
         if (!selectedProduct || quantity <= 0 || !unitPrice) {
-            alert("Please fill all fields!");
+            showAlert('warning', 'Missing Information', 'Please fill all fields before adding to cart!');
             return;
         }
 
@@ -129,7 +157,11 @@ export default function NewSalePage() {
         const availableStock = getAvailableStock(selectedProduct);
 
         if (quantity > availableStock) {
-            alert(`Only ${availableStock} units available! (${getCartQuantity(selectedProduct)} already in cart)`);
+            showAlert(
+                'error',
+                'Insufficient Stock',
+                `Only ${availableStock} units available! (${getCartQuantity(selectedProduct)} already in cart)`
+            );
             return;
         }
 
@@ -162,17 +194,17 @@ export default function NewSalePage() {
 
     const handleCheckout = async () => {
         if (!transactionId.trim()) {
-            alert("Please enter a Transaction ID!");
+            showAlert('warning', 'Transaction ID Required', 'Please enter a Transaction ID to proceed!');
             return;
         }
 
         if (!selectedCustomer) {
-            alert("Please select a customer!");
+            showAlert('warning', 'Customer Required', 'Please select a customer to proceed!');
             return;
         }
 
         if (cart.length === 0) {
-            alert("Cart is empty!");
+            showAlert('warning', 'Empty Cart', 'Your cart is empty! Add products before checkout.');
             return;
         }
 
@@ -200,34 +232,50 @@ export default function NewSalePage() {
                 console.error("Supabase error details:", error);
 
                 if (error.code === '23505') {
-                    alert(`Transaction ID "${transactionId}" already exists! Please use a unique transaction ID.`);
+                    showAlert(
+                        'error',
+                        'Duplicate Transaction ID',
+                        `Transaction ID "${transactionId}" already exists! Please use a unique transaction ID.`
+                    );
                 } else if (error.code === '42703') {
-                    alert("Database column error. The 'transaction_id' column may not exist in the sales table.");
+                    showAlert(
+                        'error',
+                        'Database Error',
+                        "Database column error. The 'transaction_id' column may not exist in the sales table."
+                    );
                 } else if (error.message) {
-                    alert(`Error: ${error.message}`);
+                    showAlert('error', 'Error', error.message);
                 } else {
-                    alert("Failed to create sale. Please check the console for details.");
+                    showAlert('error', 'Failed', 'Failed to create sale. Please check the console for details.');
                 }
                 return;
             }
 
             if (!data) {
-                alert("Failed to create sale. No data returned.");
+                showAlert('error', 'No Data', 'Failed to create sale. No data returned.');
                 return;
             }
 
-            alert(`Sale completed successfully!\nTransaction ID: ${transactionId}\nTotal: Rs ${calculateTotal().toLocaleString()}`);
+            showAlert(
+                'success',
+                'Sale Completed!',
+                `Transaction ID: ${transactionId}\nTotal: Rs ${calculateTotal().toLocaleString()}\n\nRedirecting to dashboard...`
+            );
 
+            // Clear form
             setCart([]);
             setSelectedCustomer(null);
             setCustomerSearch("");
             setTransactionId("");
             setPaymentType("CASH");
 
-            router.push("/dashboard");
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                router.push("/dashboard");
+            }, 2000);
         } catch (error) {
             console.error("Error creating sale:", error);
-            alert("An unexpected error occurred. Please try again.");
+            showAlert('error', 'Unexpected Error', 'An unexpected error occurred. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -631,12 +679,10 @@ export default function NewSalePage() {
                 <div className="max-w-[1600px] mx-auto px-6 py-6">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
-                            <div className="bg-gradient-to-br from-[#137fec] to-blue-600 rounded-lg w-8 h-8 flex items-center justify-center">
-                                <ShoppingCart className="h-4 w-4 text-white" />
-                            </div>
                             <div>
-                                <p className="text-white text-sm font-semibold">BevPOS</p>
-                                <p className="text-slate-500 text-xs">Enterprise Inventory System</p>
+                                <h2 className="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400" style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>
+                                    SHELON
+                                </h2>
                             </div>
                         </div>
 
@@ -654,14 +700,67 @@ export default function NewSalePage() {
                         </div>
 
                         <div className="text-xs text-slate-500">
-                            © 2026 BevPOS. All rights reserved.
+                            © 2026 Shelon. All rights reserved.
                         </div>
                     </div>
                 </div>
             </footer>
 
-            {/* Custom Scrollbar Styles */}
+            {/* Custom Alert Modal */}
+            {customAlert.show && (
+                <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200"
+                    onClick={closeAlert}
+                >
+                    <div
+                        className="bg-[#16212b] border border-[rgba(255,255,255,0.1)] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Icon */}
+                        <div className="flex items-center justify-center mb-4">
+                            <div className={`rounded-full p-3 ${
+                                customAlert.type === 'success' ? 'bg-emerald-500/10' :
+                                    customAlert.type === 'error' ? 'bg-red-500/10' :
+                                        customAlert.type === 'warning' ? 'bg-amber-500/10' :
+                                            'bg-blue-500/10'
+                            }`}>
+                                {customAlert.type === 'success' && <CheckCircle className="h-8 w-8 text-emerald-500" />}
+                                {customAlert.type === 'error' && <AlertCircle className="h-8 w-8 text-red-500" />}
+                                {customAlert.type === 'warning' && <AlertTriangle className="h-8 w-8 text-amber-500" />}
+                                {customAlert.type === 'info' && <Info className="h-8 w-8 text-blue-500" />}
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-xl font-bold text-white text-center mb-2">
+                            {customAlert.title}
+                        </h3>
+
+                        {/* Message */}
+                        <p className="text-slate-400 text-center text-sm mb-6 whitespace-pre-line">
+                            {customAlert.message}
+                        </p>
+
+                        {/* OK Button */}
+                        <button
+                            onClick={closeAlert}
+                            className={`w-full px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                                customAlert.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                    customAlert.type === 'error' ? 'bg-red-600 hover:bg-red-700' :
+                                        customAlert.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' :
+                                            'bg-blue-600 hover:bg-blue-700'
+                            } text-white`}
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Global Styles - Must be at root level */}
             <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+                
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                     height: 6px;
