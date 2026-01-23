@@ -3,7 +3,9 @@
 
 import { Home, ShoppingCart, Users, Package, BarChart3, CreditCard, Settings, LogOut, Receipt } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -22,6 +24,76 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const [loggingOut, setLoggingOut] = useState(false);
+    const [userEmail, setUserEmail] = useState("Admin User");
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+    // Check authentication on mount
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+
+                if (!session) {
+                    console.log("No session found, redirecting to login");
+                    router.push('/login');
+                } else {
+                    console.log("Session found, user authenticated");
+                    setIsCheckingAuth(false);
+                }
+            } catch (error) {
+                console.error("Auth check error:", error);
+                router.push('/login');
+            }
+        };
+
+        checkAuth();
+    }, [router]);
+
+    // Get user info
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user?.email) {
+                setUserEmail(user.email.split('@')[0]);
+            }
+        };
+        getUser();
+    }, []);
+
+    const handleLogout = async () => {
+        if (loggingOut) return;
+
+        const confirmed = window.confirm("Are you sure you want to logout?");
+        if (!confirmed) return;
+
+        setLoggingOut(true);
+        try {
+            await supabase.auth.signOut();
+            localStorage.removeItem("isAuthenticated");
+            localStorage.removeItem("userId");
+
+            console.log("Logged out successfully");
+            window.location.href = "/login";
+        } catch (error) {
+            console.error("Logout error:", error);
+            alert("Failed to logout. Please try again.");
+            setLoggingOut(false);
+        }
+    };
+
+    // Show loading spinner while checking auth
+    if (isCheckingAuth) {
+        return (
+            <div className="min-h-screen bg-[#0a0e1a] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="inline-block h-12 w-12 border-4 border-[#0ea5e9] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-slate-400 text-sm">Verifying authentication...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen bg-[#0a0e1a] overflow-hidden">
@@ -96,22 +168,34 @@ export default function DashboardLayout({
                     })}
                 </nav>
 
-                {/* User Profile */}
-                <div className="p-4 border-t border-[#2d3748]">
+                {/* User Profile with Logout */}
+                <div className="p-4 border-t border-[#2d3748]" style={{ marginTop: '2px' }}>
                     <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#0f172a] border border-[#2d3748]">
                         <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg text-sm">
-                            A
+                            {userEmail.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm font-medium leading-none truncate">
-                                Admin User
+                            <p className="text-white text-sm font-medium leading-none truncate capitalize">
+                                {userEmail}
                             </p>
                             <p className="text-slate-400 text-xs mt-1 truncate">
                                 Admin Access
                             </p>
                         </div>
-                        <button className="text-slate-400 hover:text-white transition-colors">
-                            <LogOut className="h-5 w-5" />
+                        <button
+                            onClick={handleLogout}
+                            disabled={loggingOut}
+                            className="text-slate-400 hover:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group relative"
+                            title="Logout"
+                        >
+                            {loggingOut ? (
+                                <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <LogOut className="h-5 w-5" />
+                            )}
+                            <span className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-[#0f172a] text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                Logout
+                            </span>
                         </button>
                     </div>
                 </div>
