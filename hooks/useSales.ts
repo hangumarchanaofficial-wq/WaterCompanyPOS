@@ -48,7 +48,13 @@ export function useTodaySales() {
 }
 
 export function useSalesSummary() {
-    const [summary, setSummary] = useState({ cash: 0, credit: 0, total: 0 })
+    const [summary, setSummary] = useState({
+        totalSales: 0,
+        totalTransactions: 0,
+        cashSales: 0,
+        creditSales: 0,
+        avgTransaction: 0
+    })
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
